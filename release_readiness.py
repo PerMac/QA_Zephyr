@@ -56,9 +56,9 @@ class ZephyrReleaseQA:
         self.issues = {}
         zeph_wiki_soup = self.process_zeph_wiki()
         filters = self.get_filters(zeph_wiki_soup)
-        filter_api_urls = self.filter_to_api_urls(filters)
+        self.filter_api_urls = self.filter_to_api_urls(filters)
         for key in self.subset_names:
-            self.issues[key] = GitHubIssues(filter_api_urls[key])
+            self.issues[key] = GitHubIssues(self.filter_api_urls[key])
 
         self.statuses = self.evaluate_statuses()
 
@@ -109,8 +109,9 @@ class ZephyrReleaseQA:
 
         for severity in api_urls:
             filtr = filters[severity]
-            api_com = "+".join(filtr.split(" "))
-            api_urls[severity] = "https://api.github.com/search/issues" + "?q=" + api_com + "+repo:" + self.zephr_repo
+            #api_com = "+".join(filtr.split(" "))
+            api_com = filtr.replace(" ", "+")
+            api_urls[severity] = "https://api.github.com/search/issues" + "?q=" + api_com + "+repo:" + self.zephr_repo + "&per_page=50"
 
         return api_urls
 
@@ -118,7 +119,7 @@ class ZephyrReleaseQA:
         """
         Evaluate and return statuses of fulfillment of the release criteria
 
-        :return: statuses of fulfillment of the release criteria
+        :return: Statuses of fulfillment of the release criteria
         """
         return {key: bool(self.issues[key].get_number() < self.max_issues_count[key]) for key in self.subset_names}
 
@@ -149,12 +150,11 @@ class ZephyrReleaseQA:
 if __name__ == '__main__':
     zephyr_release_qa = ZephyrReleaseQA()
 
-    """
     # examples
     high_num = zephyr_release_qa.issues['high'].get_number()
     mid_num = zephyr_release_qa.issues['medium'].get_number()
     low_num = zephyr_release_qa.issues['low'].get_number()
-    zephyr_release_qa.issues['high'].print_titles()
-    """
+    zephyr_release_qa.issues['medium'].print_titles()
+    print("test")
 
     zephyr_release_qa.release_readiness(verbose=True)
